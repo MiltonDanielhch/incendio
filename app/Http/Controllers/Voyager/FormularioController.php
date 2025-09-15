@@ -71,6 +71,16 @@ class FormularioController extends Controller
         return view('vendor.voyager.formularios.list', compact('data'));
     }
 
+    public function ver($id)
+    {
+        $formulario = Formulario::with([
+            'comunidad.municipio.provincia',
+            'incendio.ubicacion'
+        ])->findOrFail($id);
+
+        return view('vendor.voyager.formularios.show', compact('formulario')); // o 'formularios.ver'
+    }
+
     /**
      * Show the form for creating a new resource.
      */
@@ -154,6 +164,48 @@ class FormularioController extends Controller
         // }
     }
 
+    public function edit($id)
+    {
+        $formulario = Formulario::with([
+            'comunidad.municipio.provincia',
+            'incendio.ubicacion'
+        ])->findOrFail($id);
+
+        $provincias = Provincia::all();
+        $municipios = $formulario->comunidad->municipio->provincia->municipios;
+        $comunidades = $formulario->comunidad->municipio->comunidades;
+
+        $grupoEtarios = GrupoEtario::all();
+
+        return view('vendor.voyager.formularios.edit-add', compact(
+            'formulario',
+            'provincias',
+            'municipios',
+            'comunidades',
+            'grupoEtarios'
+        ));
+    }
+
+    public function update(UpdateFormularioRequest $request, $id)
+    {
+        $formulario = Formulario::findOrFail($id);
+
+        $validated = $request->validated();
+
+        return DB::transaction(function () use ($validated, $request, $formulario) {
+            // 1. Actualizar incendio asociado (sin crear uno nuevo)
+            $this->service->actualizarIncendio($formulario->incendio, $request);
+
+            // 2. Actualizar el formulario
+            $formulario->update($validated);
+
+            // 3. Guardar secciones adicionales (si las tenés)
+            $this->service->guardarTodo($formulario->id, $request);
+
+            return redirect()->route('formularios.index')
+                ->with('success', 'Formulario actualizado correctamente.');
+        });
+    }
 
     public function buscar_municipio($id_provincia)
     {

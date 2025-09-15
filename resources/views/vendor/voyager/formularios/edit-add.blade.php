@@ -1,3 +1,7 @@
+@php
+    $formulario = $formulario ?? null;
+@endphp
+
 @extends('voyager::master')
 
 @section('css')
@@ -40,219 +44,164 @@
                         @if(isset($formulario)) @method('PUT') @endif
 
 
-                        <div class="panel-group" id="accordionLugar">
+                        {{-- ACORDEÓN ÚNICO - TODO EN 1 PANEL --}}
+                        <div class="panel-group" id="accordionUnico">
                             <div class="panel panel-default">
                                 <div class="panel-heading">
                                     <h4 class="panel-title">
-                                        <a data-toggle="collapse" data-parent="#accordionLugar" href="#collapseLugar"><i class="voyager-location"></i> Información Geográfica</a>
-                                    </h4>
-                                </div>
-                                <div id="collapseLugar" class="panel-collapse collapse in">
-                                    <div class="panel-body">
-                                        <div class="row">
-                                            <div class="col-md-2">
-                                                <div class="form-group">
-                                                    <label>Nombre del encuestador</label>
-                                                    <input type="text" name="nombre_encuestador" class="form-control"
-                                                           value="{{ old('nombre_encuestador', $formulario->nombre_encuestador ?? auth()->user()->name) }}">
-                                                </div>
-                                            </div>
-                                            {{-- Contacto del encuestador --}}
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label>Contacto del encuestador</label>
-                                                    <input type="text" name="contacto_encuestador" class="form-control"
-                                                        value="{{ old('contacto_encuestador', $formulario->contacto_encuestador ?? '') }}">
-                                                </div>
-                                                {{-- Estado del formulario --}}
-                                                <div class="form-group">
-                                                    <label>Estado del formulario</label>
-                                                    <select name="estado" class="form-control">
-                                                        @foreach(['borrador','completado','validado','rechazado'] as $est)
-                                                            <x-option-selected :value="$est" :selected="old('estado', $formulario->estado ?? 'completado')">{{ ucfirst($est) }}</x-option-selected>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- =======  SECCIÓN 1: GEOGRÁFICA  ======= -->
-                        <div class="panel-group" id="accordionLugar">
-                            <div class="panel panel-default">
-                                <div class="panel-heading">
-                                    <h4 class="panel-title">
-                                        <a data-toggle="collapse" data-parent="#accordionLugar" href="#collapseLugar"><i class="voyager-location"></i> Información Geográfica</a>
-                                    </h4>
-                                </div>
-                                <div id="collapseLugar" class="panel-collapse collapse in">
-                                    <div class="panel-body">
-                                        <div class="row">
-                                            <div class="col-md-2">
-                                                <div class="form-group">
-                                                    <label>Fecha de llenado</label>
-                                                    <input type="date" name="fecha_llenado" class="form-control"
-                                                           value="{{ old('fecha_llenado', isset($formulario) ? $formulario->fecha_llenado->format('Y-m-d') : date('Y-m-d')) }}">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <x-select-cascada
-                                                    id="provincia_id" name="provincia_id" label="Provincia"
-                                                    :options="$provincias"
-                                                    :selected="old('provincia_id', $formulario->comunidad->municipio->provincia_id ?? null)"
-                                                />
-                                            </div>
-                                            <div class="col-md-3">
-                                                <x-select-cascada
-                                                    id="municipio_id" name="municipio_id" label="Municipio"
-                                                    :options="isset($formulario) ? $formulario->comunidad->municipio->provincia->municipios : collect()"
-                                                    :selected="old('municipio_id', $formulario->comunidad->municipio_id ?? '')"
-                                                    parent="provincia_id"
-                                                    route="{{ route('admin.formulario.buscar_municipio','') }}"
-                                                    :disabled="!isset($formulario)"
-                                                />
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label>Comunidad</label>
-                                                <div class="input-group" style="align-items: flex-end;">
-                                                    <x-select-cascada
-                                                        id="comunidad_id"
-                                                        name="comunidad_id"
-                                                        label=""
-                                                        :options="isset($formulario) ? $formulario->comunidad->municipio->comunidades : collect()"
-                                                        :selected="old('comunidad_id', $formulario->comunidad_id ?? '')"
-                                                        parent="municipio_id"
-                                                        route="{{ route('admin.formulario.buscar_comunidad','') }}"
-                                                        :disabled="!isset($formulario)"
-                                                        class="form-control"
-                                                    />
-                                                    <span class="input-group-btn">
-                                                        <button type="button" id="btnNuevaComunidad"
-                                                                class="btn btn-success btn-md"
-                                                                title="Añadir nueva comunidad"
-                                                                style="height: 34px; margin-left: 6px;" disabled>
-                                                            <i class="voyager-plus"></i>
-                                                        </button>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- =======  SECCIÓN 2: INCENDIO  ======= -->
-                      <!-- =======  SECCIÓN 2: INCENDIO  ======= -->
-                        <div class="panel-group" id="accordionIncendio">
-                            <div class="panel panel-default">
-                                <div class="panel-heading">
-                                    <h4 class="panel-title">
-                                        <a data-toggle="collapse" data-parent="#accordionIncendio" href="#collapseIncendio" aria-expanded="true" aria-controls="collapseIncendio">
-                                            <i class="voyager-fire" aria-hidden="true"></i>
-                                            <span class="sr-only">Icono de incendio</span>
-                                            Información del Incendio
+                                        <a data-toggle="collapse" href="#collapseUnico">
+                                            <i class="voyager-eye"></i> Ver / completar información
                                         </a>
                                     </h4>
                                 </div>
-                                <div id="collapseIncendio" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingIncendio">
+                                <div id="collapseUnico" class="panel-collapse collapse in">
                                     <div class="panel-body">
+
+                                        {{-- 1. FORMULARIO --}}
+                                        <h5>📋 Información del Formulario</h5>
                                         <div class="row">
-                                            {{-- Código oculto (se genera automáticamente) --}}
-                                            <input type="hidden" name="codigo_incendio" value="{{ old('codigo_incendio') }}">
-
-                                            <div class="col-md-3">
-                                                <!-- Fecha/hora de inicio -->
-                                                <div class="form-group">
-                                                    <label for="fecha_inicio">Fecha y hora de inicio <span class="text-danger">*</span></label>
-                                                    <input type="datetime-local" name="fecha_inicio" id="fecha_inicio" class="form-control"
-                                                        max="{{ now()->format('Y-m-d\TH:i') }}"
-                                                        value="{{ old('fecha_inicio') }}" required>
-                                                </div>
-
-                                                <!-- Fecha/hora de fin -->
-                                                <div class="form-group">
-                                                    <label for="fecha_fin">Fecha y hora de finalización (opcional)</label>
-                                                    <input type="datetime-local" name="fecha_fin" id="fecha_fin" class="form-control"
-                                                        max="{{ now()->format('Y-m-d\TH:i') }}"
-                                                        value="{{ old('fecha_fin') }}">
-                                                </div>
+                                            <div class="col-md-4">
+                                                <label>Encuestador</label>
+                                                <input type="text" name="nombre_encuestador" class="form-control"
+                                                    value="{{ old('nombre_encuestador', $formulario->nombre_encuestador ?? auth()->user()->name) }}">
                                             </div>
-
-                                            <div class="col-md-3">
-                                                <!-- Estado del INCENDIO -->
-                                                <div class="form-group">
-                                                    <label for="incendio_estado">Estado del incendio</label>
-                                                    <select name="incendio_estado" id="incendio_estado" class="form-control">
-                                                        @foreach(['activo', 'controlado', 'extinguido'] as $est)
-                                                            <option value="{{ $est }}" {{ old('incendio_estado', 'activo') == $est ? 'selected' : '' }}>
-                                                                {{ ucfirst($est) }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-
-                                                <!-- Nivel de gravedad -->
-                                                <div class="form-group">
-                                                    <label for="nivel_gravedad">Nivel de gravedad</label>
-                                                    <select name="nivel_gravedad" id="nivel_gravedad" class="form-control">
-                                                        @foreach(['bajo', 'medio', 'alto', 'critico'] as $niv)
-                                                            <option value="{{ $niv }}" {{ old('nivel_gravedad', 'medio') == $niv ? 'selected' : '' }}>
-                                                                {{ ucfirst($niv) }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
+                                            <div class="col-md-4">
+                                                <label>Contacto</label>
+                                                <input type="text" name="contacto_encuestador" class="form-control"
+                                                    value="{{ old('contacto_encuestador', $formulario->contacto_encuestador ?? '') }}">
                                             </div>
+                                            <div class="col-md-4">
+                                                <label>Estado</label>
+                                                <select name="estado" class="form-control">
+                                                    @foreach(['borrador','completado','validado','rechazado'] as $est)
+                                                        <option value="{{ $est }}" {{ old('estado', $formulario->estado ?? 'completado') == $est ? 'selected' : '' }}>{{ ucfirst($est) }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
 
-                                            <div class="col-md-6">
-                                                <!-- Ubicación exacta del incendio -->
-                                                <div class="form-group">
-                                                    <label for="direccion_manual">Referencia / Dirección aproximada del incendio</label>
-                                                    <input type="text" name="direccion_manual" id="direccion_manual" class="form-control"
-                                                        placeholder="Ej: Km 12 ruta 40, entrada al pueblo">
-                                                </div>
+                                        <hr>
 
-                                                <!-- Coordenadas opcionales -->
-                                                <div class="row">
-                                                    <div class="col-md-6">
-                                                        <label for="lat">Latitud <small>(opcional, puedes pegar desde Google Maps)</small></label>
-                                                        <input type="number" step="0.000001" name="lat" id="lat" class="form-control"
-                                                            placeholder="-24.123456" value="{{ old('lat') }}">
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label for="lon">Longitud <small>(opcional)</small></label>
-                                                        <input type="number" step="0.000001" name="lon" id="lon" class="form-control"
-                                                            placeholder="-65.654321" value="{{ old('lon') }}">
-                                                    </div>
-                                                </div>
+                                        {{-- 2. UBICACIÓN --}}
+                                        <h5>🌍 Ubicación Geográfica</h5>
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <label>Fecha llenado</label>
+                                                <input type="date" name="fecha_llenado" class="form-control"
+                                                    value="{{ old('fecha_llenado', isset($formulario) ? $formulario->fecha_llenado->format('Y-m-d') : date('Y-m-d')) }}">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <x-select-cascada id="provincia_id" name="provincia_id" label="Provincia"
+                                                                :options="$provincias"
+                                                                :selected="old('provincia_id', $formulario->comunidad->municipio->provincia_id ?? null)"/>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <x-select-cascada id="municipio_id" name="municipio_id" label="Municipio"
+                                                                :options="isset($formulario) ? $formulario->comunidad->municipio->provincia->municipios : collect()"
+                                                                :selected="old('municipio_id', $formulario->comunidad->municipio_id ?? '')"
+                                                                parent="provincia_id"
+                                                                route="{{ route('admin.formulario.buscar_municipio','') }}"
+                                                                :disabled="!isset($formulario)"/>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <x-select-cascada id="comunidad_id" name="comunidad_id" label="Comunidad"
+                                                                :options="isset($formulario) ? $formulario->comunidad->municipio->comunidades : collect()"
+                                                                :selected="old('comunidad_id', $formulario->comunidad_id ?? '')"
+                                                                parent="municipio_id"
+                                                                route="{{ route('admin.formulario.buscar_comunidad','') }}"
+                                                                :disabled="!isset($formulario)"/>
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                        {{-- 3. INCENDIO --}}
+                                        <h5>🔥 Datos del Incendio</h5>
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <label>Inicio</label>
+                                                <input type="datetime-local" name="fecha_inicio" class="form-control"
+                                                    max="{{ now()->format('Y-m-d\TH:i') }}"
+                                                    value="{{ old('fecha_inicio', optional(optional($formulario)->incendio)->fecha_inicio?->format('Y-m-d\TH:i') ?? '') }}"
+                                                    required>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label>Fin (opc.)</label>
+                                                <input type="datetime-local" name="fecha_fin" class="form-control"
+                                                    max="{{ now()->format('Y-m-d\TH:i') }}"
+                                                    value="{{ old('fecha_fin', optional(optional($formulario)->incendio)->fecha_fin?->format('Y-m-d\TH:i') ?? '') }}">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label>Estado</label>
+                                                <select name="incendio_estado" class="form-control">
+                                                    @foreach(['activo','controlado','extinguido'] as $e)
+                                                        <option value="{{ $e }}"
+                                                            {{ old('incendio_estado', optional(optional($formulario)->incendio)->estado ?? 'activo') == $e ? 'selected' : '' }}>
+                                                            {{ ucfirst($e) }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label>Gravedad</label>
+                                                <select name="nivel_gravedad" class="form-control">
+                                                    @foreach(['bajo','medio','alto','critico'] as $g)
+                                                        <option value="{{ $g }}"
+                                                            {{ old('nivel_gravedad', optional(optional($formulario)->incendio)->nivel_gravedad ?? 'medio') == $g ? 'selected' : '' }}>
+                                                            {{ ucfirst($g) }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
                                             </div>
                                         </div>
 
                                         <div class="row">
                                             <div class="col-md-6">
-                                                <!-- Causas probables -->
-                                                <div class="form-group">
-                                                    <label for="causas_probables">Causas probables</label>
-                                                    <textarea name="causas_probables" id="causas_probables" class="form-control" rows="3">{{ old('causas_probables') }}</textarea>
-                                                </div>
+                                                <label>Dirección aprox.</label>
+                                                <input type="text" name="direccion_manual" class="form-control"
+                                                    value="{{ old('direccion_manual', optional(optional(optional($formulario)->incendio)->ubicacion)->direccion ?? '') }}"
+                                                    placeholder="Ej: Km 12 ruta 40">
                                             </div>
 
+                                           @php
+                                                $lat = null;
+                                                $lon = null;
+                                                if (optional(optional($formulario)->incendio)->ubicacion) {
+                                                    $raw = DB::select("SELECT ST_Y(coordenadas) AS lat, ST_X(coordenadas) AS lon FROM ubicaciones WHERE id = ?", [optional(optional($formulario)->incendio)->ubicacion->id])[0] ?? null;
+                                                    if ($raw) {
+                                                        $lat = $raw->lat;
+                                                        $lon = $raw->lon;
+                                                    }
+                                                }
+                                            @endphp
+
+                                            <div class="col-md-3">
+                                                <label>Latitud</label>
+                                                <input type="number" step="0.000001" name="lat" class="form-control"
+                                                    value="{{ old('lat', $lat) }}" placeholder="-24.123456">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label>Longitud</label>
+                                                <input type="number" step="0.000001" name="lon" class="form-control"
+                                                   value="{{ old('lon', $lon) }}" placeholder="-65.654321">
+                                            </div>
+                                            </div>
+
+                                        <div class="row">
                                             <div class="col-md-6">
-                                                <!-- Observaciones -->
-                                                <div class="form-group">
-                                                    <label for="observaciones">Observaciones adicionales</label>
-                                                    <textarea name="observaciones" id="observaciones" class="form-control" rows="3">{{ old('observaciones') }}</textarea>
-                                                </div>
+                                                <label>Causas probables</label>
+                                                <textarea name="causas_probables" class="form-control" rows="2">{{ old('causas_probables',old('causas_probables', optional($formulario ?? null)->incendio->causas_probables ?? '')) }}</textarea>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label>Observaciones</label>
+                                                <textarea name="observaciones" class="form-control" rows="2">{{ old('observaciones', optional(optional($formulario)->incendio)->observaciones ?? '')  }}</textarea>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+
+                                    </div>{{-- /.panel-body --}}
+                                </div>{{-- /.collapse --}}
+                            </div>{{-- /.panel --}}
+                        </div>{{-- /.panel-group --}}
 
                         <div class="form-group text-right" style="margin-top: 20px;">
                             <button type="submit" class="btn btn-primary btn-lg" aria-label="Guardar formulario de incendio">
@@ -335,10 +284,11 @@ window.addEventListener('DOMContentLoaded', function () {
                 $.get("{{ route('admin.formulario.buscar_municipio', '') }}/" + provId)
                     .done(function (data) {
                         $muni.prop('disabled', false)
-                             .html('<option value="">Seleccione un municipio</option>');
+                            .html('<option value="">Seleccione un municipio</option>');
                         $.each(data, (_, item) => {
                             $muni.append($('<option>', {value: item.id, text: item.nombre}));
                         });
+                        $(document).trigger('provincia:loaded'); // ← importante
                     })
                     .fail(() => resetSelect('municipio_id', 'Error al cargar'));
             } else {
@@ -357,10 +307,11 @@ window.addEventListener('DOMContentLoaded', function () {
                 $.get("{{ route('admin.formulario.buscar_comunidad', '') }}/" + muniId)
                     .done(function (data) {
                         $comu.prop('disabled', false)
-                             .html('<option value="">Seleccione una comunidad</option>');
+                            .html('<option value="">Seleccione una comunidad</option>');
                         $.each(data, (_, item) => {
                             $comu.append($('<option>', {value: item.id, text: item.nombre}));
                         });
+                        $(document).trigger('municipio:loaded'); // ← importante
                     })
                     .fail(() => resetSelect('comunidad_id', 'Error al cargar'));
             } else {
@@ -368,36 +319,29 @@ window.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Solo si estamos editando y existen los IDs
+       // Solo si estamos editando y existen los IDs
         @if(isset($formulario))
-            (function(){
-                // Usamos el operador ternario para asegurarnos de que el valor sea 'null' si no existe
-                // para que JavaScript lo maneje correctamente.
-                const provId = {{ $formulario->comunidad->municipio->provincia_id ?? 'null' }};
-                const muniId = {{ $formulario->comunidad->municipio_id       ?? 'null' }};
-                const comuId = {{ $formulario->comunidad_id                ?? 'null' }};
+            const provId = {{ $formulario->comunidad->municipio->provincia_id ?? 'null' }};
+            const muniId = {{ $formulario->comunidad->municipio_id       ?? 'null' }};
+            const comuId = {{ $formulario->comunidad_id                ?? 'null' }};
 
-                // Si hay un valor válido para provincia, lo establecemos
-                if (provId) {
-                    $('#provincia_id').val(provId).trigger('change');
-                }
+            if (provId) {
+                $('#provincia_id').val(provId).trigger('change');
 
-                // Usamos un retraso para dar tiempo a que los municipios se carguen
-                setTimeout(() => {
-                    // Si hay un valor válido para el municipio, lo establecemos
+                // Esperamos a que el AJAX de provincia termine
+                $(document).one('provincia:loaded', function () {
                     if (muniId) {
                         $('#municipio_id').val(muniId).trigger('change');
-                    }
-                }, 300);
 
-                // Usamos otro retraso para dar tiempo a que las comunidades se carguen
-                setTimeout(() => {
-                    // Si hay un valor válido para la comunidad, lo establecemos
-                    if (comuId) {
-                        $('#comunidad_id').val(comuId);
+                        // Esperamos a que el AJAX de municipio termine
+                        $(document).one('municipio:loaded', function () {
+                            if (comuId) {
+                                $('#comunidad_id').val(comuId);
+                            }
+                        });
                     }
-                }, 600);
-            })();
+                });
+            }
         @endif
     })(window.jQuery);
 });

@@ -47,14 +47,17 @@
                             </span>
                         </td>
                         <td class="no-sort no-click text-right">
-                            <a href="{{ route('formularios.show', $formulario->id) }}" title="Ver" class="btn btn-sm btn-warning view">
-                                <i class="voyager-eye"></i> <span class="hidden-xs hidden-sm">Ver</span>
+                            <a href="{{ route('formularios.ver', $formulario->id) }}"
+                            title="Ver"
+                            class="btn btn-sm btn-warning view">
+                                <i class="voyager-eye"></i>
+                                <span class="hidden-xs hidden-sm">Ver</span>
                             </a>
-                            @if(auth()->user()->hasPermission('edit_formularios'))
+                            {{-- @if(auth()->user()->hasPermission('edit_formularios')) --}}
                                 <a href="{{ route('formularios.edit', $formulario->id) }}" title="Editar" class="btn btn-sm btn-primary edit">
                                     <i class="voyager-edit"></i> <span class="hidden-xs hidden-sm">Editar</span>
                                 </a>
-                            @endif
+                            {{-- @endif --}}
                             @if(auth()->user()->hasPermission('delete_formularios'))
                                 <button title="Borrar" class="btn btn-sm btn-danger delete" data-toggle="modal" data-target="#delete_modal" onclick="deleteItem('{{ route('formularios.destroy', $formulario->id) }}')">
                                     <i class="voyager-trash"></i> <span class="hidden-xs hidden-sm">Borrar</span>
