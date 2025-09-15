@@ -64,7 +64,9 @@ class Ubicacion extends Model
     // Método para establecer coordenadas
     public function setCoordenadasAttribute($value)
     {
-        if (is_array($value) && isset($value['latitud'], $value['longitud'])) {
+        if ($value instanceof \Illuminate\Database\Query\Expression) {
+            $this->attributes['coordenadas'] = $value;
+        } elseif (is_array($value) && isset($value['latitud'], $value['longitud'])) {
             $this->attributes['coordenadas'] = \DB::raw("POINT({$value['latitud']}, {$value['longitud']})");
         }
     }

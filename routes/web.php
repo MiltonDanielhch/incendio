@@ -7,6 +7,7 @@ use App\Http\Controllers\PersonController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AjaxController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\Voyager\FormularioController;
 use TCG\Voyager\Facades\Voyager;
 
 /*
@@ -19,11 +20,27 @@ use TCG\Voyager\Facades\Voyager;
 Route::redirect('login', 'admin/login')->name('login');
 Route::redirect('/', 'admin');
 
+
 // Grupo principal con middleware personalizado
 Route::prefix('admin')->middleware(['loggin', 'system'])->group(function () {
 
-    // Rutas de Voyager (no tocar)
+    // Rutas de Voyager
     Voyager::routes();
+
+    Route::resource('formularios', FormularioController::class)->middleware('auth');
+        Route::get('formularios/ajax/list', [FormularioController::class, 'list'])->name('formularios.list');
+        Route::get('formularios/create/provincia/{id_provincia}', [FormularioController::class, 'buscar_municipio'])->name('admin.formulario.buscar_municipio');
+        Route::get('formularios/create/municipio/{id_municipio}', [FormularioController::class, 'buscar_comunidad'])->name('admin.formulario.buscar_comunidad');
+        Route::get('formularios/create/get-alcalde/{municipioId}', [FormularioController::class, 'getAlcalde'])->name('admin.formulario.getAlcalde');
+        Route::get('formularios/create/get-poblacion/{municipioId}', [FormularioController::class, 'getPoblacion'])->name('admin.formulario.getPoblacion');
+
+        Route::get('formularios/{id}/delete', [FormularioController::class, 'destroy'])->name('formularios.destroy');
+        Route::get('formularios/{id}/restore', [FormularioController::class, 'restore'])->name('formularios.restore');
+        Route::get('formularios/{id}/ver', [FormularioController::class, 'ver'])->name('formularios.ver');
+        Route::get('formularios/trashed', [FormularioController::class, 'trashed'])->name('formularios.trashed');
+
+        // ──────────────── COMUNIDADES (QUICK STORE) ────────────────
+        Route::post('comunidades/quick-store', [FormularioController::class, 'quickStoreComunidad'])->name('admin.comunidades.quick-store');
 
     // ──────────────── PERSONAS ────────────────
     Route::prefix('people')->group(function () {

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('comunidades', function (Blueprint $table) {
             $table->id();
             $table->string('nombre');
-            $table->enum('tipo_comunidad', ['urbana', 'rural', 'indigena']);
+            $table->enum('tipo_comunidad', ['urbana', 'rural', 'intercultural', 'campesina', 'indigena']);
             $table->unsignedInteger('poblacion_aproximada')->nullable();
             $table->foreignId('municipio_id')->constrained('municipios')->onDelete('restrict');
             $table->foreignId('ubicacion_id')->nullable()->constrained('ubicaciones')->onDelete('restrict');

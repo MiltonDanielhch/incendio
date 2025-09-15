@@ -19,8 +19,8 @@ return new class extends Migration
             $table->text('referencia')->nullable();
             // $table->geometry('coordenadas', 4326)->nullable();
             // $table->spatialIndex('coordenadas');
-            $table->point('coordenadas', 4326);
-            $table->spatialIndex('coordenadas');
+            $table->point('coordenadas', 4326)->nullable();
+            // $table->spatialIndex('coordenadas');
             // $table->index(['latitud', 'longitud'], 'ubicaciones_lat_lon_idx');
             $table->timestamps();
             $table->softDeletes();
