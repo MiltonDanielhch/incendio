@@ -20,6 +20,7 @@ return new class extends Migration
             $table->decimal('supervivencia_estimada_porcentaje', 5, 2)->nullable();
             $table->foreignId('formulario_id')->constrained('formularios')->onDelete('cascade');
             $table->timestamps();
+            $table->softDeletes();
             $table->index(['fecha_reforestacion', 'formulario_id']);
         });
     }

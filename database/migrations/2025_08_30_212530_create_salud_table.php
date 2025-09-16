@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('gravedad_promedio')->nullable()->comment('Escala del 1 al 5');
             $table->text('tratamiento_requerido')->nullable();
             $table->timestamps();
+            $table->softDeletes();
             $table->index(['formulario_id', 'catalogo_id']);
         });
     }

@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('dias_clase_perdidos')->nullable();
             $table->foreignId('formulario_id')->constrained('formularios')->onDelete('cascade');
             $table->timestamps();
+            $table->softDeletes();
             $table->index(['formulario_id', 'catalogo_id']);
         });
     }

@@ -30,16 +30,6 @@
 
                     <form action="{{ isset($formulario) ? route('formularios.update', $formulario->id) : route('formularios.store') }}" method="POST">
                         {{-- <pre>{{ print_r(old(), true) }}</pre> --}}
-                        {{-- Mostrar todos los errores de validación --}}
-                        @if ($errors->any())
-                            <div class="alert alert-danger">
-                                <ul>
-                                    @foreach ($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
                         @csrf
                         @if(isset($formulario)) @method('PUT') @endif
 
@@ -85,7 +75,7 @@
                                         {{-- 2. UBICACIÓN --}}
                                         <h5>🌍 Ubicación Geográfica</h5>
                                         <div class="row">
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
                                                 <label>Fecha llenado</label>
                                                 <input type="date" name="fecha_llenado" class="form-control"
                                                     value="{{ old('fecha_llenado', isset($formulario) ? $formulario->fecha_llenado->format('Y-m-d') : date('Y-m-d')) }}">
@@ -103,13 +93,22 @@
                                                                 route="{{ route('admin.formulario.buscar_municipio','') }}"
                                                                 :disabled="!isset($formulario)"/>
                                             </div>
-                                            <div class="col-md-3">
-                                                <x-select-cascada id="comunidad_id" name="comunidad_id" label="Comunidad"
-                                                                :options="isset($formulario) ? $formulario->comunidad->municipio->comunidades : collect()"
-                                                                :selected="old('comunidad_id', $formulario->comunidad_id ?? '')"
-                                                                parent="municipio_id"
-                                                                route="{{ route('admin.formulario.buscar_comunidad','') }}"
-                                                                :disabled="!isset($formulario)"/>
+                                           <div class="col-md-4">
+                                                <label>Comunidad</label>
+                                                <div class="input-group">
+                                                    <x-select-cascada id="comunidad_id" name="comunidad_id" label=""
+                                                                    :options="isset($formulario) ? $formulario->comunidad->municipio->comunidades : collect()"
+                                                                    :selected="old('comunidad_id', $formulario->comunidad_id ?? '')"
+                                                                    parent="municipio_id"
+                                                                    route="{{ route('admin.formulario.buscar_comunidad','') }}"
+                                                                    :disabled="!isset($formulario)"
+                                                                    class="form-control" />
+                                                    <span class="input-group-btn">
+                                                        <button type="button" id="btnNuevaComunidad" class="btn btn-success" disabled>
+                                                            <i class="voyager-plus"></i>
+                                                        </button>
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -158,12 +157,13 @@
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <label>Dirección aprox.</label>
-                                                <input type="text" name="direccion_manual" class="form-control"
+                                                <input type="text" name="direccion_manual" id="direccion_manual" class="form-control"
                                                     value="{{ old('direccion_manual', optional(optional(optional($formulario)->incendio)->ubicacion)->direccion ?? '') }}"
                                                     placeholder="Ej: Km 12 ruta 40">
+                                                <small class="text-muted">Hacé clic en el mapa para obtener latitud y longitud</small>
                                             </div>
 
-                                           @php
+                                            @php
                                                 $lat = null;
                                                 $lon = null;
                                                 if (optional(optional($formulario)->incendio)->ubicacion) {
@@ -177,15 +177,27 @@
 
                                             <div class="col-md-3">
                                                 <label>Latitud</label>
-                                                <input type="number" step="0.000001" name="lat" class="form-control"
+                                                <input type="number" step="0.000001" name="lat" id="lat" class="form-control"
                                                     value="{{ old('lat', $lat) }}" placeholder="-24.123456">
                                             </div>
                                             <div class="col-md-3">
                                                 <label>Longitud</label>
-                                                <input type="number" step="0.000001" name="lon" class="form-control"
-                                                   value="{{ old('lon', $lon) }}" placeholder="-65.654321">
+                                                <input type="number" step="0.000001" name="lon" id="lon" class="form-control"
+                                                    value="{{ old('lon', $lon) }}" placeholder="-65.654321">
                                             </div>
+                                        </div>
+
+                                        {{-- Mapa interactivo --}}
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <label>Seleccioná la ubicación en el mapa</label>
+                                                <div id="mapaPicker" style="height: 350px; border: 1px solid #ccc; border-radius: 4px;"></div>
+                                                <br>
+                                                <button type="button" id="btnMiUbicacion" class="btn btn-sm btn-info">
+                                                    <i class="voyager-location"></i> Usar mi ubicación actual
+                                                </button>
                                             </div>
+                                        </div>
 
                                         <div class="row">
                                             <div class="col-md-6">
@@ -258,6 +270,18 @@
     </div>
   </div>
 </div>
+
+{{-- 4. MAPA INTERACTIVO --}}
+{{-- <div class="row">
+    <div class="col-md-12">
+        <label>Seleccioná la ubicación en el mapa</label>
+        <div id="mapaPicker" style="height: 350px; border: 1px solid #ccc; border-radius: 4px;"></div>
+        <br>
+        <button type="button" id="btnMiUbicacion" class="btn btn-sm btn-info">
+            <i class="voyager-location"></i> Usar mi ubicación actual
+        </button>
+    </div>
+</div> --}}
 @stop
 
 
@@ -391,6 +415,94 @@ $('#guardarComunidad').click(function () {
         });
 });
 </script>
+
+
+{{-- CSS/JS Leaflet --}}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+    (function ($) {
+
+        // Inicializar mapa
+        let mapPicker, marker;
+        const defaultCenter = [-24.123456, -65.654321]; // cambiá por tu centro
+
+        function initMapPicker() {
+            mapPicker = L.map('mapaPicker').setView(defaultCenter, 10);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(mapPicker);
+
+            // Si ya hay coordenadas → centrar y poner marcador
+            const lat = parseFloat($('#lat').val()) || defaultCenter[0];
+            const lon = parseFloat($('#lon').val()) || defaultCenter[1];
+            if (!isNaN(lat) && !isNaN(lon)) {
+                mapPicker.setView([lat, lon], 13);
+                marker = L.marker([lat, lon]).addTo(mapPicker);
+            }
+
+            // Click en el mapa
+            mapPicker.on('click', function (ev) {
+                const {lat, lng} = ev.latlng;
+                setCoords(lat, lng);
+            });
+        }
+
+        function setCoords(lat, lon) {
+            $('#lat').val(lat.toFixed(6));
+            $('#lon').val(lon.toFixed(6));
+            if (marker) mapPicker.removeLayer(marker);
+            marker = L.marker([lat, lon]).addTo(mapPicker);
+
+             // >>> Geocoding inverso <<<
+            reverseGeocode(lat, lon);
+        }
+
+        // Botón "Usar mi ubicación"
+        $('#btnMiUbicacion').on('click', function () {
+            if (!navigator.geolocation) return toastr.error('Tu navegador no soporta geolocalización');
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    setCoords(lat, lon);
+                    mapPicker.setView([lat, lon], 15);
+                },
+                err => toastr.error('No se pudo obtener tu ubicación: ' + err.message),
+                {enableHighAccuracy: true, timeout: 10000}
+            );
+        });
+
+        initMapPicker();
+
+    })(window.jQuery);
+});
+
+
+// Geocoding inverso con Nominatim (gratis, sin API-key)
+function reverseGeocode(lat, lon) {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.display_name) {
+                // Cortamos la dirección para que no sea kilométrica
+                const direccion = data.display_name.split(',').slice(0, 3).join(',').trim();
+                $('#direccion_manual').val(direccion);
+            } else {
+                $('#direccion_manual').val('');
+            }
+        })
+        .catch(err => {
+            console.warn('Error reverse geocoding:', err);
+            $('#direccion_manual').val('');
+        });
+}
+</script>
+
 @endpush
 
 

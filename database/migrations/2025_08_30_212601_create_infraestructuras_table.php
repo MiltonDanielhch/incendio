@@ -20,6 +20,7 @@ return new class extends Migration
             $table->text('descripcion_dano')->nullable();
             $table->foreignId('formulario_id')->constrained('formularios')->onDelete('cascade');
             $table->timestamps();
+            $table->softDeletes();
             $table->index(['formulario_id', 'catalogo_id']);
         });
     }

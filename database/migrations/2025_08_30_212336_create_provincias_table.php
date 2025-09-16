@@ -18,6 +18,8 @@ return new class extends Migration
             $table->foreignId('ubicacion_id')->nullable()->constrained('ubicaciones')->onDelete('restrict');
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index('nombre');
         });
     }
 

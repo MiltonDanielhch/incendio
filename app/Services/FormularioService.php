@@ -17,6 +17,7 @@ use App\Models\Reforestacion;
 use App\Models\ReporteComunitario;
 use App\Models\Ubicacion;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class FormularioService
 {
@@ -31,21 +32,36 @@ class FormularioService
         $ubicacion = null;
 
         if ($request->filled('direccion_manual') || ($request->filled('lat') && $request->filled('lon'))) {
+            $coordenadas = null;
+            if (is_numeric($request->lat) && is_numeric($request->lon)) {
+                $lon = (float) $request->lon;
+                $lat = (float) $request->lat;
+                // raw completa: Laravel NO tocará el interior
+                $coordenadas = DB::raw("ST_GeomFromText('POINT($lon $lat)', 4326)");
+            }
+
+            // AHORA creamos el registro sin que Laravel intente bindear dentro de la raw
             $ubicacion = Ubicacion::create([
-                'direccion' => $request->input('direccion_manual'),
-                'referencia' => $request->input('direccion_manual'),
-                'coordenadas' => ($request->has('lat') && $request->has('lon') && is_numeric($request->lat) && is_numeric($request->lon))
-                    ? DB::raw("ST_GeomFromText('POINT({$request->lon} {$request->lat})', 4326)")
-                    : null,
+                'direccion'   => $request->input('direccion_manual'),
+                'referencia'  => $request->input('direccion_manual'),
+                'coordenadas' => $coordenadas,
             ]);
         }
 
-        // Generar código único si no viene
+        // ✅ SOLUCIÓN #4: Generación segura de código único con reintentos
         $codigo = $request->input('codigo_incendio');
         if (empty($codigo)) {
-            do {
-                $codigo = 'INC-' . now()->format('Ymd') . '-' . strtoupper(uniqid());
-            } while (Incendio::withTrashed()->where('codigo_incendio', $codigo)->exists());
+            $maxIntentos = 5;
+            for ($i = 0; $i < $maxIntentos; $i++) {
+                $codigo = 'INC-' . now()->format('Ymd') . '-' . strtoupper(Str::random(8));
+                if (!Incendio::withTrashed()->where('codigo_incendio', $codigo)->exists()) {
+                    break;
+                }
+                if ($i === $maxIntentos - 1) {
+                    throw new \Exception('No se pudo generar un código único para el incendio.');
+                }
+                usleep(100000); // Espera 0.1s para reducir colisión
+            }
         }
 
         return Incendio::create([
@@ -74,14 +90,18 @@ class FormularioService
             'observaciones' => $request->observaciones,
         ]);
 
-        // Actualizar o crear ubicación
         if ($request->filled('direccion_manual') || ($request->filled('lat') && $request->filled('lon'))) {
+            $coordenadas = null;
+            if (is_numeric($request->lat) && is_numeric($request->lon)) {
+                $lon = (float) $request->lon;
+                $lat = (float) $request->lat;
+                $coordenadas = DB::raw("ST_GeomFromText('POINT($lon $lat)', 4326)");
+            }
+
             $ubicacionData = [
-                'direccion' => $request->input('direccion_manual'),
-                'referencia' => $request->input('direccion_manual'),
-                'coordenadas' => ($request->has('lat') && $request->has('lon') && is_numeric($request->lat) && is_numeric($request->lon))
-                    ? DB::raw("ST_GeomFromText('POINT({$request->lon} {$request->lat})', 4326)")
-                    : null,
+                'direccion'   => $request->input('direccion_manual'),
+                'referencia'  => $request->input('direccion_manual'),
+                'coordenadas' => $coordenadas,
             ];
 
             if ($incendio->ubicacion) {

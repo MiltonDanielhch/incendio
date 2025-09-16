@@ -19,6 +19,7 @@ return new class extends Migration
             $table->integer('cantidad_lesionados')->default(0);
             $table->foreignId('formulario_id')->constrained('formularios')->onDelete('cascade');
             $table->timestamps();
+            $table->softDeletes();
             $table->index(['formulario_id', 'grupo_etario_id']);
         });
     }

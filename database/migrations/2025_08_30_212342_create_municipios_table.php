@@ -23,6 +23,8 @@ return new class extends Migration
             $table->unique(['nombre', 'provincia_id']);
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index('nombre');
         });
     }
 

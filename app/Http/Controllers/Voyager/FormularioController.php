@@ -172,8 +172,12 @@ class FormularioController extends Controller
         ])->findOrFail($id);
 
         $provincias = Provincia::all();
-        $municipios = $formulario->comunidad->municipio->provincia->municipios;
-        $comunidades = $formulario->comunidad->municipio->comunidades;
+        $municipios = Municipio::where('provincia_id', $formulario->comunidad->municipio->provincia_id)
+                                ->orderBy('nombre')
+                                ->get();
+        $comunidades = Comunidad::where('municipio_id', $formulario->comunidad->municipio_id)
+                                ->orderBy('nombre')
+                                ->get();
 
         $grupoEtarios = GrupoEtario::all();
 

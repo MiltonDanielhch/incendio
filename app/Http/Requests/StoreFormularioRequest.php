@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Comunidad;
+use App\Models\Municipio;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreFormularioRequest extends FormRequest
@@ -37,22 +39,41 @@ class StoreFormularioRequest extends FormRequest
             // 'incendio_id' => 'required|exists:incendios,id',
 
             // Reporte comunitario
-            'incendios_registrados' => 'nullable|integer',
-            'incendios_activos' => 'nullable|integer',
+            'incendios_registrados' => 'nullable|integer|min:0',
+            'incendios_activos' => 'nullable|integer|min:0',
             'necesidades' => 'nullable|string',
             'ayuda_recibida' => 'nullable|string',
-            'num_familias_afectadas' => 'nullable|integer',
-            'num_familias_damnificadas' => 'nullable|integer',
-            'num_personas_evacuadas' => 'nullable|integer',
+            'num_familias_afectadas' => 'nullable|integer|min:0',
+            'num_familias_damnificadas' => 'nullable|integer|min:0',
+            'num_personas_evacuadas' => 'nullable|integer|min:0',
             'vias_acceso_afectadas' => 'nullable|string',
 
             // Asistencia
             'actividades' => 'nullable|string',
-            'cantidad_beneficiarios' => 'nullable|integer',
+            'cantidad_beneficiarios' => 'nullable|integer|min:0',
             'fecha_asistencia' => 'nullable|date',
             'organizacion_proveedora' => 'nullable|string',
             'tipo_asistencia_id' => 'nullable|exists:catalogos,id',
-            'valor_asistencia' => 'nullable|numeric',
+            'valor_asistencia' => 'nullable|numeric|min:0',
+
+
+            'provincia_id' => ['required', 'exists:provincias,id'],
+            'municipio_id' => [
+                'required','integer','exists:municipios,id',
+                function ($attr, $value, $fail) {
+                    if (Municipio::where('id', $value)->value('provincia_id') != $this->provincia_id) {
+                        $fail('El municipio no pertenece a la provincia seleccionada.');
+                    }
+                },
+            ],
+            'comunidad_id' => [
+                'required','integer','exists:comunidades,id',
+                function ($attr, $value, $fail) {
+                    if (Comunidad::where('id', $value)->value('municipio_id') != $this->municipio_id) {
+                        $fail('La comunidad no pertenece al municipio seleccionado.');
+                    }
+                },
+            ],
         ];
     }
 }
