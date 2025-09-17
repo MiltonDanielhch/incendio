@@ -17,51 +17,61 @@ class Ubicacion extends Model
         'longitud',
         'direccion',
         'referencia',
-        'coordenadas'
+        'coordenadas',
     ];
 
-    // Relación con Provincias
-    public function provincia()
+    /* -----------------------------------------------------------------
+     |  RELACIONES
+     * -----------------------------------------------------------------*/
+
+    public function provincia()  { return $this->hasOne(Provincia::class); }
+    public function municipio()  { return $this->hasOne(Municipio::class); }
+    public function comunidad()  { return $this->hasOne(Comunidad::class); }
+    public function incendio()   { return $this->hasOne(Incendio::class); }
+
+    /* -----------------------------------------------------------------
+     |  ACCESORES / MUTADORES  (MySQL POINT binario)
+     * -----------------------------------------------------------------*/
+
+    /**
+     * Devuelve [lat, lng] o null.
+     * Se basa en ST_AsText para leer el POINT binario.
+     */
+    public function getLatLngAttribute(): ?array
     {
-        return $this->hasOne(Provincia::class);
+        $parsed = $this->coordenadas;   // llama al mutador inferior
+        if (!$parsed || !isset($parsed['latitud'], $parsed['longitud'])) {
+            return null;
+        }
+        // Descarta punto (0,0)
+        if ($parsed['latitud'] == 0 && $parsed['longitud'] == 0) {
+            return null;
+        }
+        return [(float)$parsed['latitud'], (float)$parsed['longitud']];
     }
 
-    // Relación con Municipios
-    public function municipio()
-    {
-        return $this->hasOne(Municipio::class);
-    }
-
-    // Relación con Comunidades
-    public function comunidad()
-    {
-        return $this->hasOne(Comunidad::class);
-    }
-
-    // Relación con Incendios
-    public function incendio()
-    {
-        return $this->hasOne(Incendio::class);
-    }
-
-    // Método para obtener coordenadas como array
+    /**
+     * Parsea POINT binario → ['latitud' => float, 'longitud' => float]
+     */
     public function getCoordenadasAttribute($value)
     {
-        // Si estás usando MySQL POINT type, necesitarás parsear el valor
-        if ($value) {
-            // Parsear el formato POINT(lat lng) de MySQL
-            preg_match('/POINT\(([^ ]+) ([^ ]+)\)/', $value, $matches);
-            if (count($matches) === 3) {
-                return [
-                    'latitud' => (float) $matches[1],
-                    'longitud' => (float) $matches[2]
-                ];
-            }
-        }
-        return null;
+        if (!$value) return null;
+
+        $row = \DB::select("SELECT ST_AsText(coordenadas) AS point FROM ubicaciones WHERE id = ?", [$this->id])[0] ?? null;
+        if (!$row) return null;
+
+        preg_match('/POINT\(([^ ]+) ([^ ]+)\)/', $row->point, $m);
+        if (count($m) !== 3) return null;
+
+        return [
+            'latitud'  => (float)$m[2], // POINT(long lat)
+            'longitud' => (float)$m[1],
+        ];
     }
 
-    // Método para establecer coordenadas
+    /**
+     * Guarda coordenadas desde array ['latitud' => ..., 'longitud' => ...]
+     */
     public function setCoordenadasAttribute($value)
     {
         if ($value instanceof \Illuminate\Database\Query\Expression) {

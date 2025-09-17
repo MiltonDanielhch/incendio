@@ -1,5 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\AsistenciasController;
+use App\Http\Controllers\Admin\EconomicoController;
+use App\Http\Controllers\Admin\PersonasController;
+use App\Http\Controllers\Admin\ReforestacionController;
+use App\Http\Controllers\Admin\ReporteController;
+use App\Http\Controllers\Admin\ServiciosController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\ErrorController;
@@ -38,6 +44,55 @@ Route::prefix('admin')->middleware(['loggin', 'system'])->group(function () {
         Route::get('formularios/{id}/restore', [FormularioController::class, 'restore'])->name('formularios.restore');
         Route::get('formularios/{id}/ver', [FormularioController::class, 'ver'])->name('formularios.ver');
         Route::get('formularios/trashed', [FormularioController::class, 'trashed'])->name('formularios.trashed');
+
+
+        // ──────────────── SECCIONES DEL FORMULARIO (PERSONAS, ECONÓMICO, SERVICIOS, ETC.) ────────────────
+        // Agrupamos todas bajo el mismo prefijo y name-space
+        Route::prefix('formularios/{formulario}')->name('admin.formularios.')->group(function () {
+
+            // PERSONAS
+            Route::prefix('personas')->name('personas.')->controller(PersonasController::class)->group(function () {
+                Route::get('/edit-add', 'editAdd')->name('edit-add');
+                Route::post('/',        'store')  ->name('store');
+                Route::put('/{persona}','update') ->name('update');
+            });
+
+            // ECONÓMICO
+            Route::prefix('economico')->name('economico.')->controller(EconomicoController::class)->group(function () {
+                Route::get('/edit-add', 'editAdd')->name('edit-add');
+                Route::post('/',        'store')  ->name('store');
+                // Route::put('/{economico}','update')->name('update');
+                Route::put('/',         'update') ->name('update');
+            });
+
+            // SERVICIOS
+            Route::prefix('servicios')->name('servicios.')->controller(ServiciosController::class)->group(function () {
+                Route::get('/edit-add', 'editAdd')->name('edit-add');
+                Route::post('/',        'store')  ->name('store');
+                Route::put('/','update')->name('update');
+            });
+
+            // REPORTE
+            Route::prefix('reporte')->name('reporte.')->controller(ReporteController::class)->group(function () {
+                Route::get('/edit-add', 'editAdd')->name('edit-add');
+                Route::post('/',        'store')  ->name('store');
+                Route::put('/{reporte}','update')->name('update');
+            });
+
+            // ASISTENCIAS
+            Route::prefix('asistencias')->name('asistencias.')->controller(AsistenciasController::class)->group(function () {
+                Route::get('/edit-add', 'editAdd')->name('edit-add');
+                Route::post('/',        'store')  ->name('store');
+                Route::put('/{asistencia}','update')->name('update');
+            });
+
+            // REFORESTACIONES
+            Route::prefix('reforestaciones')->name('reforestaciones.')->controller(ReforestacionController::class)->group(function () {
+                Route::get('/edit-add', 'editAdd')->name('edit-add');
+                Route::post('/',        'store')  ->name('store');
+                Route::put('/{reforestacion}','update')->name('update');
+            });
+        });
 
         // ──────────────── COMUNIDADES (QUICK STORE) ────────────────
         Route::post('comunidades/quick-store', [FormularioController::class, 'quickStoreComunidad'])->name('admin.comunidades.quick-store');

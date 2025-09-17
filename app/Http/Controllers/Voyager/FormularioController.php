@@ -166,9 +166,25 @@ class FormularioController extends Controller
 
     public function edit($id)
     {
+        // $formulario = Formulario::with([
+        //     'comunidad.municipio.provincia',
+        //     'incendio.ubicacion'
+        // ])->findOrFail($id);
+
         $formulario = Formulario::with([
             'comunidad.municipio.provincia',
-            'incendio.ubicacion'
+            'incendio.ubicacion',
+            'salud',
+            'afectadosIncendios',
+            'sectoresAgricolas',
+            'sectoresPecuarios',
+            'areasForestales',
+            'infraestructuras',
+            'serviciosBasicos',
+            'educaciones',
+            'reporteComunitario',
+            'asistencias',
+            'reforestaciones'
         ])->findOrFail($id);
 
         $provincias = Provincia::all();
