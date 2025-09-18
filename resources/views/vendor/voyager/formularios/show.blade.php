@@ -51,10 +51,16 @@
 
 
              {{-- 5. Secciones dinámicas (personas, infra, animales, económico) --}}
-            @include('vendor.voyager.formularios.partials.personas-show')
+             {{-- @include('vendor.voyager.formularios.partials.per') --}}
+            @include('vendor.voyager.formularios.partials.personas-matriz-show', ['grupoEtarios' => $grupoEtarios])
+            @include('vendor.voyager.formularios.partials.salud-matriz-show', [
+                'grupoEtarios' => $grupoEtarios,
+                'enfermedades' => $enfermedades
+            ])
+            @include('vendor.voyager.formularios.partials.economico-show')
+            {{-- @include('vendor.voyager.formularios.partials.personas-show') --}}
             @include('vendor.voyager.formularios.partials.servicios-show')
             @include('vendor.voyager.formularios.partials.reporte-show')
-            @include('vendor.voyager.formularios.partials.economico-show')
             @include('vendor.voyager.formularios.partials.reforestaciones-show')
             @include('vendor.voyager.formularios.partials.asistencias-show')
 

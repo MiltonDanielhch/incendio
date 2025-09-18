@@ -73,12 +73,15 @@ class FormularioController extends Controller
 
     public function ver($id)
     {
+        $grupoEtarios = GrupoEtario::orderBy('nombre')->get();
+        $enfermedades = Catalogo::where('tipo', 'enfermedad')->get();
+
         $formulario = Formulario::with([
             'comunidad.municipio.provincia',
             'incendio.ubicacion'
         ])->findOrFail($id);
 
-        return view('vendor.voyager.formularios.show', compact('formulario')); // o 'formularios.ver'
+        return view('vendor.voyager.formularios.show', compact('formulario', 'grupoEtarios', 'enfermedades')); // o 'formularios.ver'
     }
 
     /**

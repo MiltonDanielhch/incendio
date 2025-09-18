@@ -55,6 +55,8 @@ Route::prefix('admin')->middleware(['loggin', 'system'])->group(function () {
                 Route::get('/edit-add', 'editAdd')->name('edit-add');
                 Route::post('/',        'store')  ->name('store');
                 Route::put('/{persona}','update') ->name('update');
+
+                 Route::post('/matriz-rapido',     'matrizRapido')       ->name('matriz.rapido');
             });
 
             // ECONÓMICO
@@ -63,6 +65,9 @@ Route::prefix('admin')->middleware(['loggin', 'system'])->group(function () {
                 Route::post('/',        'store')  ->name('store');
                 // Route::put('/{economico}','update')->name('update');
                 Route::put('/',         'update') ->name('update');
+
+                // ➜➜➜  MATRIZ RÁPIDA (nueva)
+                Route::post('/matriz-rapido', 'matrizRapido')->name('matriz.rapido');
             });
 
             // SERVICIOS
@@ -70,6 +75,9 @@ Route::prefix('admin')->middleware(['loggin', 'system'])->group(function () {
                 Route::get('/edit-add', 'editAdd')->name('edit-add');
                 Route::post('/',        'store')  ->name('store');
                 Route::put('/','update')->name('update');
+
+                // ➜➜➜  MATRIZ RÁPIDA (nueva)
+                Route::post('/matriz-rapido', 'matrizRapido')->name('matriz.rapido');
             });
 
             // REPORTE

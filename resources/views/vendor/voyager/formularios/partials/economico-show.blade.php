@@ -83,10 +83,10 @@
                         <th>Has afectadas</th>
                         <td>{{ number_format($forestal->ha_afectadas, 2) }} ha</td>
                     </tr>
-                    <tr>
+                    <trx>
                         <th>Has pérdidas totales</th>
                         <td>{{ number_format($forestal->ha_perdidas, 2) }} ha</td>
-                    </tr>
+                    </trx>
                     <tr>
                         <th>Valor pérdida</th>
                         <td>$ {{ number_format($forestal->valor_estimado_perdida, 0, ',', '.') }}</td>

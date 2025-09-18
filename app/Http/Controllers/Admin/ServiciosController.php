@@ -31,7 +31,8 @@ class ServiciosController extends Controller
         $instituciones = Catalogo::where('tipo', 'tipo_infraestructura')
                                  ->where('contexto', 'educacion')
                                  ->get();
-        $modalidades   = Catalogo::where('tipo', 'modalidad_educacion')->get();
+        $modalidades = Catalogo::where('tipo', 'modalidad_educacion')->get();
+
 
         return view('vendor.voyager.formularios.secciones.servicios.edit-add', compact(
             'formulario', 'infraTipos', 'servTipos', 'instituciones', 'modalidades'
@@ -84,6 +85,87 @@ class ServiciosController extends Controller
                         ->with('success', 'Servicios e infraestructura guardados.');
     }
 
+    public function matrizRapido(Formulario $formulario, Request $request)
+    {
+        $request->validate(['filas' => 'required|array']);
+
+        // ---------- INFRAESTRUCTURA (clave = ID del tipo) ----------
+        foreach ($request->input('filas', []) as $clave => $datos) {
+            if (!is_numeric($clave)) continue;
+
+            // Determinamos si es infraestructura por el contexto (no empieza con servicio ni educacion)
+            if (empty($datos['catalogo_id']) && empty($datos['cantidad_afectadas']) && empty($datos['cantidad_destruidas']) && empty($datos['valor_estimado_perdida'])) {
+                Infraestructura::where('formulario_id', $formulario->id)
+                            ->where('catalogo_id', $clave)
+                            ->delete();
+            } else {
+                Infraestructura::updateOrCreate(
+                    ['formulario_id' => $formulario->id, 'catalogo_id' => $clave],
+                    $datos + ['formulario_id' => $formulario->id, 'catalogo_id' => $clave]
+                );
+            }
+        }
+
+        // ---------- SERVICIOS BÁSICOS (clave = ID del servicio) ----------
+        foreach ($request->input('filas', []) as $clave => $datos) {
+            if (!is_numeric($clave)) continue;
+
+            if (empty($datos['catalogo_id']) && empty($datos['numero_comunidades_afectadas']) && empty($datos['dias_sin_servicio']) && empty($datos['valor_estimado_perdida'])) {
+                ServicioBasico::where('formulario_id', $formulario->id)
+                            ->where('catalogo_id', $clave)
+                            ->delete();
+            } else {
+                ServicioBasico::updateOrCreate(
+                    ['formulario_id' => $formulario->id, 'catalogo_id' => $clave],
+                    $datos + ['formulario_id' => $formulario->id, 'catalogo_id' => $clave]
+                );
+            }
+        }
+
+        // ---------- EDUCACIÓN (institución → modalidad) ----------
+        foreach ($request->input('edu', []) as $instId => $porMod) {
+            foreach ($porMod as $modId => $campos) {
+
+                // ✅ Saltar claves no numéricas (como 'catalogo_id')
+                if (!is_numeric($modId)) {
+                    continue;
+                }
+
+                // 1. Si todo está vacío → borramos
+                if (
+                    empty($campos['num_estudiantes']) &&
+                    empty($campos['num_estudiantes_afectados']) &&
+                    empty($campos['dias_clase_perdidos'])
+                ) {
+                    Educacion::where('formulario_id', $formulario->id)
+                            ->where('catalogo_id', $instId)
+                            ->where('modalidad_educacion_id', $modId)
+                            ->delete();
+                    continue;
+                }
+
+                // 2. Solo los campos que necesitamos
+                $data = [
+                    'num_estudiantes'           => $campos['num_estudiantes'] ?? 0,
+                    'num_estudiantes_afectados' => $campos['num_estudiantes_afectados'] ?? 0,
+                    'dias_clase_perdidos'       => $campos['dias_clase_perdidos'] ?? 0,
+                ];
+
+                // 3. Guardar / actualizar
+                Educacion::updateOrCreate(
+                    [
+                        'formulario_id'          => $formulario->id,
+                        'catalogo_id'            => $instId,
+                        'modalidad_educacion_id' => $modId,
+                    ],
+                    $data
+                );
+            }
+        }
+
+        return redirect()->route('formularios.ver', $formulario)
+                        ->with('success', 'Matriz de servicios e infraestructura actualizada.');
+    }
     /**
      * Show the form for creating a new resource.
      */

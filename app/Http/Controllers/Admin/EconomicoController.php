@@ -84,6 +84,63 @@ class EconomicoController extends Controller
                         ->with('success', 'Datos económicos guardados.');
     }
 
+    public function matrizRapido(Formulario $formulario, Request $request)
+    {
+        $request->validate(['filas' => 'required|array']);
+
+        // ---------- AGRÍCOLA (clave = ID del cultivo) ----------
+        foreach ($request->input('filas', []) as $clave => $datos) {
+            if (!is_numeric($clave)) continue; // solo IDs numéricos
+
+            // Determinamos si es agrícola por el contexto (no empieza con pecuario ni forestal)
+            if (empty($datos['catalogo_id']) && empty($datos['ha_afectadas']) && empty($datos['ha_perdidas']) && empty($datos['produccion_estimada_kg']) && empty($datos['valor_estimado_perdida'])) {
+                SectorAgricola::where('formulario_id', $formulario->id)
+                            ->where('catalogo_id', $clave)
+                            ->delete();
+            } else {
+                SectorAgricola::updateOrCreate(
+                    ['formulario_id' => $formulario->id, 'catalogo_id' => $clave],
+                    $datos + ['formulario_id' => $formulario->id, 'catalogo_id' => $clave]
+                );
+            }
+        }
+
+        // ---------- PECUARIO (clave = ID de la especie) ----------
+        foreach ($request->input('filas', []) as $clave => $datos) {
+            if (!is_numeric($clave)) continue;
+
+            if (empty($datos['catalogo_id']) && empty($datos['numero_animales_afectados']) && empty($datos['numero_animales_fallecidos']) && empty($datos['numero_animales_evacuados']) && empty($datos['valor_estimado_perdida'])) {
+                SectorPecuario::where('formulario_id', $formulario->id)
+                            ->where('catalogo_id', $clave)
+                            ->delete();
+            } else {
+                SectorPecuario::updateOrCreate(
+                    ['formulario_id' => $formulario->id, 'catalogo_id' => $clave],
+                    $datos + ['formulario_id' => $formulario->id, 'catalogo_id' => $clave]
+                );
+            }
+        }
+
+        // ---------- FORESTAL (clave = ID del tipo de área) ----------
+        foreach ($request->input('filas', []) as $clave => $datos) {
+            if (!is_numeric($clave)) continue;
+
+            if (empty($datos['catalogo_id']) && empty($datos['ha_afectadas']) && empty($datos['ha_perdidas']) && empty($datos['tiempo_recuperacion_estimado_anos']) && empty($datos['valor_estimado_perdida'])) {
+                AreaForestal::where('formulario_id', $formulario->id)
+                            ->where('catalogo_id', $clave)
+                            ->delete();
+            } else {
+                AreaForestal::updateOrCreate(
+                    ['formulario_id' => $formulario->id, 'catalogo_id' => $clave],
+                    $datos + ['formulario_id' => $formulario->id, 'catalogo_id' => $clave]
+                );
+            }
+        }
+
+        return redirect()->route('formularios.ver', $formulario)
+                        ->with('success', 'Matriz económica actualizada.');
+    }
+
     /**
      * Remove the specified resource from storage.
      */

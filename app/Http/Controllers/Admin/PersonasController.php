@@ -78,6 +78,50 @@ class PersonasController extends Controller
                          ->with('success', 'Datos de personas y salud guardados.');
     }
 
+    public function matrizRapido(Formulario $formulario, Request $request)
+    {
+        // 1) AFECTADOS (grupo por grupo)
+        foreach ($request->input('filas', []) as $grupoId => $f) {
+            AfectadoIncendio::updateOrCreate(
+                ['formulario_id' => $formulario->id, 'grupo_etario_id' => $grupoId],
+                [
+                    'cantidad_afectados'  => $f['afectados']  ?? 0,
+                    'cantidad_lesionados' => $f['lesionados'] ?? 0,
+                    'cantidad_fallecidos' => $f['fallecidos'] ?? 0,
+                ]
+            );
+        }
+
+        // ✅ DEBUG: qué está llegando en salud
+        $saludInput = $request->input('salud', []);
+        // dd('SALUD LLEGANDO', $saludInput);
+
+        // 2) Borrar toda la salud del formulario
+        $formulario->salud()->delete();
+
+        // 3) Insertar solo lo que venga
+        foreach ($saludInput as $enfId => $porGrupo) {
+            foreach ($porGrupo as $grupoId => $campos) {
+                if (empty($campos['cantidad_enfermos']) &&
+                    empty($campos['gravedad_promedio']) &&
+                    empty($campos['tratamiento_requerido'])) {
+                    continue;
+                }
+
+                Salud::create([
+                    'formulario_id'         => $formulario->id,
+                    'grupo_etario_id'       => $grupoId,
+                    'catalogo_id'           => $enfId,
+                    'cantidad_enfermos'     => $campos['cantidad_enfermos'] ?? 0,
+                    'gravedad_promedio'     => $campos['gravedad_promedio'] ?? null,
+                    'tratamiento_requerido' => $campos['tratamiento_requerido'] ?? null,
+                ]);
+            }
+        }
+
+        return redirect()->route('formularios.ver', $formulario)
+            ->with('success', 'Matriz de personas y salud actualizada.');
+    }
 
     /**
      * Display the specified resource.

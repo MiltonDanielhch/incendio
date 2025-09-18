@@ -26,7 +26,7 @@
             <div class="panel-body">
                 <div class="row">
                     <div class="col-md-2">
-                   W     <label>Incendios registrados</label>
+                        <label>Incendios registrados</label>
                         <input type="number" name="incendios_registrados" class="form-control" min="0"
                                value="{{ old('incendios_registrados', optional($reporte)->incendios_registrados ?? 0) }}">
                     </div>
