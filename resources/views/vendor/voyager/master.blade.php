@@ -136,13 +136,13 @@ if (\Illuminate\Support\Str::startsWith(Auth::user()->avatar, 'http://') || \Ill
                 @php
                     $aux = new \App\Http\Controllers\Controller();
 
-                    $solucionDigital = rescue(
-                        fn () => \Illuminate\Support\Facades\DB::connection('solucionDigital')->table('settings')->get(),
-                        fn () => collect() // Devuelve una colección vacía si falla
-                    );
+                    // $solucionDigital = rescue(
+                    //     fn () => \Illuminate\Support\Facades\DB::connection('solucionDigital')->table('settings')->get(),
+                    //     fn () => collect() // Devuelve una colección vacía si falla
+                    // );
                 @endphp
 
-                @if($solucionDigital->isNotEmpty() && is_numeric($aux->payment_alert()) && setting('system.payment-alert'))
+                {{-- @if($solucionDigital->isNotEmpty() && is_numeric($aux->payment_alert()) && setting('system.payment-alert'))
                     <div class="expiration-alert" style="
                         background: linear-gradient(135deg, #fffaf2 0%, #fff3e0 100%);
                         border-left: 4px solid #ff9800;
@@ -399,7 +399,7 @@ if (\Illuminate\Support\Str::startsWith(Auth::user()->avatar, 'http://') || \Ill
                             </div>
                         </div>
                     </div>
-                @endif
+                @endif --}}
 
 
                 @yield('page_header')
