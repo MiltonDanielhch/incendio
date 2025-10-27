@@ -7,6 +7,11 @@ use App\Models\Incendio;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\AfectadoIncendio;
+use App\Models\SectorAgricola;
+use App\Models\SectorPecuario;
+use App\Models\AreaForestal;
+use App\Models\Infraestructura;
 
 class PublicController extends Controller
 {
@@ -19,7 +24,7 @@ class PublicController extends Controller
 
         // 1. Tarjetas de Estadísticas
         $stats['incendios_activos'] = Incendio::where('estado', 'activo')->count();
-        $stats['familias_afectadas'] = DB::table('reportes_comunitarios')->sum('num_familias_afectadas');
+        $stats['familias_afectadas'] = \App\Models\ReporteComunitario::sum('num_familias_afectadas');
         $stats['ha_afectadas'] = Incendio::sum('area_afectada_ha');
         $stats['formularios_total'] = Formulario::count();
 
@@ -39,29 +44,25 @@ class PublicController extends Controller
             ->get()
             ->pluck('total', 'mes');
 
-        // Rellenar meses sin datos para un gráfico continuo
+        // 3.1 Rellenar meses sin datos para un gráfico continuo
         $meses = collect();
         for ($i = 11; $i >= 0; $i--) {
             $mes = Carbon::now()->subMonths($i);
             $meses[$mes->format('Y-m')] = 0;
         }
-        $stats['formularios_por_mes'] = $meses->merge($formulariosPorMes);
+        $stats['reportes_por_mes'] = $meses->merge($formulariosPorMes);
 
         // 4. Datos para el Mapa Interactivo (Incendios activos y controlados con ubicación)
-        $incendiosParaMapa = Incendio::with('ubicacion')
+        // Optimizado para evitar N+1 queries y usar Eloquent directamente
+        $incendiosParaMapa = Incendio::join('ubicaciones', 'incendios.ubicacion_id', '=', 'ubicaciones.id')
             ->whereIn('estado', ['activo', 'controlado'])
-            ->whereHas('ubicacion', function ($query) {
-                $query->whereNotNull('coordenadas');
-            })
-            ->select('id', 'codigo_incendio', 'estado', 'nivel_gravedad', 'fecha_inicio', 'ubicacion_id')
-            ->get()
-            ->map(function ($incendio) {
-                // Extraemos lat y lon del campo de geometría POINT
-                $raw = DB::select("SELECT ST_Y(coordenadas) AS lat, ST_X(coordenadas) AS lon FROM ubicaciones WHERE id = ?", [$incendio->ubicacion_id])[0] ?? null;
-                $incendio->lat = $raw ? $raw->lat : null;
-                $incendio->lon = $raw ? $raw->lon : null;
-                return $incendio;
-            })->filter(fn($incendio) => $incendio->lat && $incendio->lon);
+            ->whereNotNull('ubicaciones.coordenadas')
+            ->select(
+                'incendios.id', 'incendios.codigo_incendio', 'incendios.estado', 'incendios.nivel_gravedad', 'incendios.fecha_inicio',
+                DB::raw('ST_Y(ubicaciones.coordenadas) as lat'),
+                DB::raw('ST_X(ubicaciones.coordenadas) as lon')
+            )
+            ->get();
 
         // 5. Últimos formularios registrados para la tabla
         $ultimosFormularios = Formulario::with(['comunidad.municipio', 'incendio'])
@@ -69,7 +70,25 @@ class PublicController extends Controller
             ->limit(10)
             ->get();
 
+        // 6. Nuevas estadísticas de impacto desde los formularios
+        $stats['total_personas_afectadas'] = AfectadoIncendio::sum('cantidad_afectados') + AfectadoIncendio::sum('cantidad_lesionados') + AfectadoIncendio::sum('cantidad_fallecidos');
+        $stats['total_personas_fallecidas'] = AfectadoIncendio::sum('cantidad_fallecidos');
+        $stats['comunidades_afectadas'] = Formulario::distinct('comunidad_id')->count();
 
-        return view('home', compact('stats', 'incendiosParaMapa', 'ultimosFormularios'));
+        // 7. Datos para el nuevo gráfico de pérdidas económicas
+        $perdidas['agricola'] = SectorAgricola::sum('valor_estimado_perdida');
+        $perdidas['pecuario'] = SectorPecuario::sum('valor_estimado_perdida');
+        $perdidas['forestal'] = AreaForestal::sum('valor_estimado_perdida');
+        $perdidas['infraestructura'] = Infraestructura::sum('valor_estimado_perdida');
+
+        $stats['perdida_economica_total'] = array_sum($perdidas);
+        $stats['perdidas_por_sector'] = $perdidas;
+
+
+        return view('home', compact(
+            'stats',
+            'incendiosParaMapa',
+            'ultimosFormularios'
+        ));
     }
 }

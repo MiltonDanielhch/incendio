@@ -18,21 +18,20 @@ class RoleController extends Controller
     //     $this->custom_authorize('browse_roles');
     //     return view('administrations.people.browse');
     // }
-    
+
     public function list(){
 
-        $search = request('search') ?? null;
+        $search = request('search');
         $paginate = request('paginate') ?? 10;
 
-        $rol_id = Auth::user()->role->id;
-
-        $data = Role::where(function($query) use ($search){
-                            $query->OrWhereRaw($search ? "id = '$search'" : 1)
-                            ->OrWhereRaw($search ? "name like '%$search%'" : 1)
-                            ->OrWhereRaw($search ? "display_name like '%$search%'" : 1);
+        $data = Role::when($search, function($query, $search) {
+                            $query->where('name', 'like', "%{$search}%")
+                                  ->orWhere('display_name', 'like', "%{$search}%");
+                            if(is_numeric($search)) {
+                                $query->orWhere('id', $search);
+                            }
                         })
-                        // ->where('deleted_at', NULL)
-                        ->whereRaw($rol_id!=1? 'id != 1':1)
+                        ->when(Auth::user()->role_id != 1, fn($q) => $q->where('id', '!=', 1))
                         ->orderBy('id', 'DESC')->paginate($paginate);
 
         return view('vendor.voyager.roles.list', compact('data'));

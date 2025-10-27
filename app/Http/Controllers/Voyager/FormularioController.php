@@ -123,48 +123,46 @@ class FormularioController extends Controller
 
     public function store(StoreFormularioRequest $request)
     {
-        // try {
+        try {
             $validated = $request->validated();
 
             // Generar código único si no viene
             if (empty($validated['codigo_formulario'])) {
+                $maxIntentos = 5;
                 do {
-                    $codigo = 'FORM-' . now()->format('Ymd') . '-' . strtoupper(uniqid());
+                    $codigo = 'FORM-' . now()->format('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(6));
                 } while (Formulario::withTrashed()->where('codigo_formulario', $codigo)->exists());
                 $validated['codigo_formulario'] = $codigo;
             }
 
             return DB::transaction(function () use ($validated, $request) {
-                // 1. Crear incendio NUEVO
+                // 1. Crear o encontrar el incendio
                 $incendio = $this->service->guardarIncendio($request);
 
-                // 2. Asignar el nuevo incendio al formulario
+                // 2. Asignar el incendio al formulario
                 $validated['incendio_id'] = $incendio->id;
 
                 // 3. Crear formulario
                 $formulario = Formulario::create($validated);
 
-                // 4. Guardar secciones adicionales (si las tienes)
-                $this->service->guardarTodo($formulario->id, $request);
-
                 return redirect()->route('formularios.index')
                                 ->with('success', 'Formulario e incendio creados exitosamente.');
             });
 
-        // } catch (\Illuminate\Validation\ValidationException $e) {
-        //     return redirect()->back()
-        //                     ->withErrors($e->validator)
-        //                     ->withInput();
-        // } catch (\Exception $e) {
-        //     \Log::error('Error creando formulario e incendio', [
-        //         'usuario' => auth()->id(),
-        //         'payload' => $request->all(),
-        //         'error'   => $e->getMessage(),
-        //     ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                            ->withErrors($e->validator)
+                            ->withInput();
+        } catch (\Exception $e) {
+            Log::error('Error creando formulario e incendio', [
+                'usuario' => auth()->id(),
+                'payload' => $request->all(),
+                'error'   => $e->getMessage(),
+            ]);
             return redirect()->back()
                             ->with('error', 'Error al crear el formulario y el incendio: ' . $e->getMessage())
                             ->withInput();
-        // }
+        }
     }
 
     public function edit($id)
@@ -219,10 +217,8 @@ class FormularioController extends Controller
             // 1. Actualizar incendio asociado (sin crear uno nuevo)
             $this->service->actualizarIncendio($formulario->incendio, $request);
 
-            // 2. Actualizar el formulario
+            // 2. Actualizar el formulario y guardar secciones adicionales
             $formulario->update($validated);
-
-            // 3. Guardar secciones adicionales (si las tenés)
             $this->service->guardarTodo($formulario->id, $request);
   return redirect()->route('formularios.index')
                 ->with('success', 'Formulario actualizado correctamente.');

@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Person;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
+// Es recomendable usar Form Requests para encapsular la validación
+use App\Http\Requests\StorePersonRequest;
+use App\Http\Requests\UpdatePersonRequest;
 
 class PersonController extends Controller
 {
-    public function __construct()
+    // Inyectar dependencias es una mejor práctica que instanciar controladores
+    public function __construct(protected StorageController $storageController)
     {
         $this->middleware('auth');
     }
@@ -27,67 +30,43 @@ class PersonController extends Controller
         $search   = request('search');
         $paginate = request('paginate', 10);
 
-        // Sub-consulta para el nombre completo
-        $fullNameRaw = "TRIM(CONCAT(
-            COALESCE(first_name, ''), ' ',
-            COALESCE(middle_name, ''), ' ',
-            COALESCE(paternal_surname, ''), ' ',
-            COALESCE(maternal_surname, '')
-        ))";
-
-        // Consulta principal
+        // Consulta más segura y legible
         $data = Person::query()
-            ->select('*')
-            ->selectRaw("$fullNameRaw as full_name")
-            ->when($search, function ($q) use ($search, $fullNameRaw) {
-                // Búsqueda numérica exacta (id o ci)
-                if (is_numeric($search)) {
-                    $q->where(function ($sub) use ($search) {
-                        $sub->where('id', $search)
-                            ->orWhere('ci', 'like', "%{$search}%");
-                    });
-                }
+            ->select('id', 'ci', 'first_name', 'middle_name', 'paternal_surname', 'maternal_surname', 'phone', 'email', 'image', 'status')
+            ->selectRaw("CONCAT_WS(' ', first_name, middle_name, paternal_surname, maternal_surname) as full_name")
+            ->when($search, function ($q, $search) {
+                $q->where(function ($query) use ($search) {
+                    $query->where('ci', 'like', "%{$search}%")
+                          ->orWhere('phone', 'like', "%{$search}%")
+                          ->orWhere('first_name', 'like', "%{$search}%")
+                          ->orWhere('middle_name', 'like', "%{$search}%")
+                          ->orWhere('paternal_surname', 'like', "%{$search}%")
+                          ->orWhere('maternal_surname', 'like', "%{$search}%")
+                          ->orWhereRaw("CONCAT_WS(' ', first_name, middle_name, paternal_surname, maternal_surname) LIKE ?", ["%{$search}%"]);
 
-                // Búsqueda textual parcial
-                $q->orWhere(function ($sub) use ($search, $fullNameRaw) {
-                    $sub->where('phone', 'like', "%{$search}%")
-                        ->orWhere('first_name', 'like', "%{$search}%")
-                        ->orWhere('middle_name', 'like', "%{$search}%")
-                        ->orWhere('paternal_surname', 'like', "%{$search}%")
-                        ->orWhere('maternal_surname', 'like', "%{$search}%")
-                        ->orWhereRaw("{$fullNameRaw} like ?", ["%{$search}%"]);
+                    if (is_numeric($search)) {
+                        $query->orWhere('id', $search);
+                    }
                 });
             })
-            ->whereNull('deleted_at')
             ->orderByDesc('id')
             ->paginate($paginate);
 
         return view('administrations.people.list', compact('data'));
     }
 
-    public function store(Request $request)
+    // Usar FormRequest para validación
+    public function store(StorePersonRequest $request)
     {
         $this->custom_authorize('add_people');
-        $request->validate([
-            'image' => 'image|mimes:jpeg,jpg,png,bmp,webp'
-        ]);
+
         DB::beginTransaction();
         try {
-            // Si envian las imágenes
-            $storageController = new StorageController();
-            Person::create([
-                'ci' => $request->ci,
-                'birth_date' => $request->birth_date,
-                'gender' => $request->gender,
-                'first_name' => $request->first_name,
-                'middle_name' => $request->middle_name,
-                'paternal_surname' => $request->paternal_surname,
-                'maternal_surname' => $request->maternal_surname,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'address' => $request->address,
-                'image' => $storageController->store_image($request->image, 'people'),
-            ]);
+            $validated = $request->validated();
+            if ($request->hasFile('image')) {
+                $validated['image'] = $this->storageController->store_image($request->file('image'), 'people');
+            }
+            Person::create($validated);
 
             DB::commit();
             return redirect()->route('voyager.people.index')->with(['message' => 'Registrado exitosamente', 'alert-type' => 'success']);
@@ -98,35 +77,23 @@ class PersonController extends Controller
     }
 
 
-    public function update(Request $request, $id){
+    public function update(UpdatePersonRequest $request, Person $person){
         $this->custom_authorize('edit_people');
-        $request->validate([
-            'image' => 'image|mimes:jpeg,jpg,png,bmp,webp'
-        ]);
 
         DB::beginTransaction();
         try {
-            $storageController = new StorageController();
+            $validated = $request->validated();
 
-            $person = Person::find($id);
-            $person->ci = $request->ci;
-            $person->birth_date = $request->birth_date;
-            $person->gender = $request->gender;
-            $person->first_name = $request->first_name;
-            $person->middle_name = $request->middle_name;
-            $person->paternal_surname = $request->paternal_surname;
-            $person->maternal_surname = $request->maternal_surname;
-            $person->email = $request->email;
-            $person->phone = $request->phone;
-            $person->address = $request->address;
-            $person->status = $request->status=='on' ? 1 : 0;
+            // El status se puede manejar directamente en el request si se define como booleano
+            $validated['status'] = $request->has('status');
 
-            if ($request->image) {
-                $person->image = $storageController->store_image($request->image, 'people');
+            if ($request->hasFile('image')) {
+                // Opcional: borrar imagen anterior si existe
+                // if($person->image) { $this->storageController->delete_image($person->image); }
+                $validated['image'] = $this->storageController->store_image($request->file('image'), 'people');
             }
 
-
-            $person->save();
+            $person->update($validated);
 
             DB::commit();
             return redirect()->route('voyager.people.index')->with(['message' => 'Actualizada exitosamente', 'alert-type' => 'success']);

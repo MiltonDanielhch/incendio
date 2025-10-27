@@ -34,19 +34,15 @@
     @stack('css')
 </head>
 <body>
-    <nav class="navbar navbar-dark shadow-sm">
-        <div class="container">
-            <a class="navbar-brand" href="{{ route('public.home') }}">🇧🇴 Portal de Monitoreo de Incendios - Beni</a>
-        </div>
-    </nav>
+    {{-- Encabezado --}}
+    @include('layouts.partials.public_header')
 
     <main class="container mt-4">
         @yield('content')
     </main>
 
-    <footer class="text-center py-4 text-muted">
-        <p>&copy; {{ date('Y') }} - Gobernación del Beni. Todos los derechos reservados.</p>
-    </footer>
+    {{-- Pie de página --}}
+    @include('layouts.partials.public_footer')
 
     @stack('javascript')
 </body>

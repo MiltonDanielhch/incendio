@@ -78,7 +78,7 @@
                                                 :selected="old('municipio_id', $formulario->comunidad->municipio_id ?? '')"
                                                 parent="provincia_id"
                                                 route="{{ route('admin.formulario.buscar_municipio','') }}"
-                                                :disabled="!isset($formulario)"/>
+                                                :disabled="!isset($formulario) && !old('provincia_id')"/>
                             </div>
                             <div class="col-md-4">
                                 <label>Comunidad</label>
@@ -88,7 +88,7 @@
                                                     :selected="old('comunidad_id', $formulario->comunidad_id ?? '')"
                                                     parent="municipio_id"
                                                     route="{{ route('admin.formulario.buscar_comunidad','') }}"
-                                                    :disabled="!isset($formulario)"
+                                                    :disabled="!isset($formulario) && !old('municipio_id')"
                                                     class="form-control" />
                                     <span class="input-group-btn">
                                         <button type="button" id="btnNuevaComunidad" class="btn btn-success" disabled>

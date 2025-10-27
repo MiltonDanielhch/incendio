@@ -34,127 +34,28 @@
 @endpush
 
 @section('content')
-    <div class="jumbotron bg-white text-center">
-        <h1 class="display-4">Estado de Incendios en el Beni</h1>
-        <p class="lead">Información actualizada sobre los incendios forestales y las acciones de respuesta en el departamento.</p>
-        <hr class="my-4">
-        <p>Última actualización: {{ now()->format('d/m/Y H:i') }}</p>
-    </div>
+    {{-- Jumbotron --}}
+    @include('partials.jumbotron')
 
     {{-- 1. Tarjetas de Estadísticas --}}
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
-            <div class="card stat-card h-100" style="border-color: #dc3545;">
-                <div class="card-body">
-                    <h5 class="card-title">INCENDIOS ACTIVOS</h5>
-                    <p class="card-text">{{ $stats['incendios_activos'] ?? 0 }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card stat-card h-100" style="border-color: #ffc107;">
-                <div class="card-body">
-                    <h5 class="card-title">FAMILIAS AFECTADAS</h5>
-                    <p class="card-text">{{ number_format($stats['familias_afectadas'] ?? 0) }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card stat-card h-100" style="border-color: #28a745;">
-                <div class="card-body">
-                    <h5 class="card-title">HECTÁREAS AFECTADAS</h5>
-                    <p class="card-text">{{ number_format($stats['ha_afectadas'] ?? 0, 2) }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card stat-card h-100" style="border-color: #17a2b8;">
-                <div class="card-body">
-                    <h5 class="card-title">FORMULARIOS TOTALES</h5>
-                    <p class="card-text">{{ $stats['formularios_total'] ?? 0 }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
+    <section class="mb-4" aria-label="Estadísticas rápidas">
+        @include('partials.stats', ['stats' => $stats])
+    </section>
 
     {{-- 2. Mapa de Incendios --}}
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h3 class="card-title mb-0">📍 Mapa de Incendios Activos y Controlados</h3>
-        </div>
-        <div class="card-body">
-            <div id="mapaIncendios"></div>
-        </div>
-    </div>
+    <section class="mb-4" aria-label="Mapa de incendios">
+        @include('partials.map')
+    </section>
 
     {{-- 3. Gráficos --}}
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header">
-                    <h3 class="card-title mb-0">📊 Incendios por Gravedad</h3>
-                </div>
-                <div class="card-body chart-container">
-                    <canvas id="chartGravedad"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header">
-                    <h3 class="card-title mb-0">📈 Reportes por Mes (Último Año)</h3>
-                </div>
-                <div class="card-body chart-container">
-                    <canvas id="chartFormulariosMes"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
+    <section class="mb-4" aria-label="Gráficos de datos">
+        @include('partials.charts')
+    </section>
 
     {{-- 4. Últimos Reportes Registrados --}}
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h3 class="card-title mb-0">📝 Últimos Reportes Registrados</h3>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover table-striped">
-                    <thead class="thead-dark">
-                        <tr>
-                            <th>Código</th>
-                            <th>Fecha de Reporte</th>
-                            <th>Comunidad</th>
-                            <th>Municipio</th>
-                            <th>Estado del Incendio</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($ultimosFormularios as $form)
-                        <tr>
-                            <td>{{ $form->codigo_formulario }}</td>
-                            <td>{{ $form->fecha_llenado->format('d/m/Y') }}</td>
-                            <td>{{ optional($form->comunidad)->nombre ?? 'N/A' }}</td>
-                            <td>{{ optional($form->comunidad->municipio)->nombre ?? 'N/A' }}</td>
-                            <td>
-                                @if($form->incendio)
-                                    <span class="badge badge-pill badge-{{ $form->incendio->estado == 'activo' ? 'danger' : ($form->incendio->estado == 'controlado' ? 'warning' : 'success') }}">
-                                        {{ ucfirst($form->incendio->estado) }}
-                                    </span>
-                                @else
-                                    <span class="badge badge-pill badge-secondary">Sin datos</span>
-                                @endif
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="5" class="text-center">No hay reportes recientes.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    <section aria-label="Últimos reportes">
+        @include('partials.latest_reports', ['ultimosFormularios' => $ultimosFormularios])
+    </section>
 @endsection
 
 @push('javascript')
@@ -163,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- MAPA DE INCENDIOS ---
     const incendios = @json($incendiosParaMapa);
     // Coordenadas centradas en el departamento del Beni, Bolivia
-    const map = L.map('mapaIncendios').setView([-14.45, -65.40], 7);
+    const map = L.map('mapaIncendios').setView([-13.45, -65.40], 7);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -223,9 +124,49 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // --- GRÁFICO DE PÉRDIDAS POR SECTOR (Pie) ---
+    const dataPerdidas = @json($stats['perdidas_por_sector'] ?? []);
+    const ctxPerdidas = document.getElementById('chartPerdidasSector').getContext('2d');
+    new Chart(ctxPerdidas, {
+        type: 'pie',
+        data: {
+            labels: Object.keys(dataPerdidas).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+            datasets: [{
+                label: 'Pérdidas por Sector',
+                data: Object.values(dataPerdidas),
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.7)',  // Agrícola
+                    'rgba(253, 126, 20, 0.7)', // Pecuario
+                    'rgba(108, 117, 125, 0.7)',// Forestal
+                    'rgba(220, 53, 69, 0.7)',  // Infraestructura
+                ],
+                borderColor: '#fff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            let value = context.raw || 0;
+                            return `${label}: ${new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB' }).format(value)}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
     // --- GRÁFICO DE FORMULARIOS POR MES (Barras) ---
-    const dataFormularios = @json($stats['formularios_por_mes'] ?? []);
-    const ctxFormularios = document.getElementById('chartFormulariosMes').getContext('2d');
+    const dataFormularios = @json($stats['reportes_por_mes'] ?? []);
+    const ctxFormularios = document.getElementById('chartReportesMes').getContext('2d');
     new Chart(ctxFormularios, {
         type: 'bar',
         data: {
