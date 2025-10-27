@@ -224,8 +224,7 @@ class FormularioController extends Controller
 
             // 3. Guardar secciones adicionales (si las tenés)
             $this->service->guardarTodo($formulario->id, $request);
-
-            return redirect()->route('formularios.index')
+  return redirect()->route('formularios.index')
                 ->with('success', 'Formulario actualizado correctamente.');
         });
     }

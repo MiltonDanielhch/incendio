@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AsistenciasController;
+use App\Http\Controllers\PublicController;
 use App\Http\Controllers\Admin\EconomicoController;
 use App\Http\Controllers\Admin\PersonasController;
 use App\Http\Controllers\Admin\ReforestacionController;
@@ -21,11 +22,8 @@ use TCG\Voyager\Facades\Voyager;
 | Web Routes
 |--------------------------------------------------------------------------
 */
-
-// Redirección raíz y login
-Route::redirect('login', 'admin/login')->name('login');
-Route::redirect('/', 'admin');
-
+// --- RUTA PÚBLICA PRINCIPAL ---
+Route::get('/', [PublicController::class, 'index'])->name('public.home');
 
 // Grupo principal con middleware personalizado
 Route::prefix('admin')->middleware(['loggin', 'system'])->group(function () {
