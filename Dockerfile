@@ -24,8 +24,9 @@ RUN chown -R unit:unit /var/www/example/storage bootstrap/cache && chmod -R 775 
 
 COPY . .
 
-RUN chown -R unit:unit storage bootstrap/cache && chmod -R 775 storage bootstrap/cache
-
+RUN chown -R unit:unit /var/www/example \
+ && chmod -R 775 /var/www/example/storage /var/www/example/bootstrap/cache
+ 
 RUN composer install --prefer-dist --optimize-autoloader --no-interaction
 
 COPY unit.json /docker-entrypoint.d/unit.json
